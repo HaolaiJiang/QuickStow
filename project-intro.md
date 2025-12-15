@@ -18,10 +18,3 @@ objective 2:  find the item location with minimal effort or no effort at all
 * key result 2: The find action should be able to be done with minimal effort or no effort at all.
 * key result 3: The returned result should display the location of the item, and the latest 3 times it was captured, if any.
 
-
-
-My comments after 1st draft:
-A few improvement:
-1. After I clicked the button. the button should turn to a button for stop recording.
-2.The recorded audio should be processed by a model to convert to text.
-3. Please show the text on the screen and indicate that that record got saved.

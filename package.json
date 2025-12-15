@@ -1,0 +1,19 @@
+{
+  "name": "quickstow",
+  "version": "1.0.0",
+  "description": "Personal item location tracking system",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "firebase": "^10.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0",
+    "fast-check": "^3.15.0"
+  }
+}

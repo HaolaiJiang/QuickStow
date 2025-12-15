@@ -40,8 +40,8 @@ yarn-error.log*
 node_modules/
 jspm_packages/
 
-# Build outputs
-dist/
+# Build outputs (keep dist for deployment)
+# dist/
 build/
 *.min.js
 *.min.css
@@ -60,7 +60,7 @@ temp/
 *.backup
 *~
 
-# Package manager files
-package-lock.json
+# Package manager files (keep package-lock.json for reproducible builds)
+# package-lock.json
 yarn.lock
 pnpm-lock.yaml
