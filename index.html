@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickStow - Record Location</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #818cf8, #c4b5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+        }
+
+        .record-btn-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Pulse Record Animation */
+        .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #ef4444;
+            /* Changed to Red for standard Recording indicator */
+            opacity: 0;
+            transform: scale(0.8);
+            animation: none;
+        }
+
+        .pulse-ring.active {
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        #recordButton {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4), inset 0 2px 5px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #recordButton:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.2);
+        }
+
+        #recordButton:active {
+            transform: scale(0.95);
+        }
+
+        #recordButton svg {
+            width: 32px;
+            height: 32px;
+            fill: white;
+        }
+
+        .result-container {
+            margin-top: 2rem;
+            text-align: left;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            display: none;
+            /* Hidden by default */
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .result-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-text:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-msg {
+            height: 20px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* API Key Input */
+        .api-key-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .api-key-wrapper:hover {
+            opacity: 1;
+        }
+
+        #apiKey {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            width: 100px;
+        }
+
+        /* Visualizer */
+        #visualizer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="visualizer"></canvas>
+
+    <div class="api-key-wrapper">
+        <input type="password" id="apiKey" placeholder="API Key">
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h1>QuickStow</h1>
+            <p class="subtitle">Tap to record a location or thought.</p>
+
+            <div class="record-btn-container">
+                <div class="pulse-ring" id="pulseRing"></div>
+                <button id="recordButton">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                        <path
+                            d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                    </svg>
+                    <span>Record Location</span>
+                </button>
+            </div>
+
+            <div class="status-msg" id="statusMsg">Ready.</div>
+
+            <div id="resultContainer" class="result-container">
+                <span class="result-label">You Said</span>
+                <div class="result-text" id="transcriptionText">--</div>
+
+                <span class="result-label">Status</span>
+                <div class="result-text" id="summaryText">--</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const API_BASE_URL = 'https://space.ai-builders.com/backend';
+        const TRANSCRIPTION_ENDPOINT = `${API_BASE_URL}/v1/audio/transcriptions`;
+        const CHAT_ENDPOINT = `${API_BASE_URL}/v1/chat/completions`;
+
+        // State
+        let audioContext;
+        let mediaStream;
+        let workletNode;
+        let isRecordingSession = false; // "Session" = actively saving chunks for the user
+        let audioChunks = [];
+        let totalSamples = 0;
+
+        // DOM Elements
+        const recordBtn = document.getElementById('recordButton');
+        const pulseRing = document.getElementById('pulseRing');
+        const statusMsg = document.getElementById('statusMsg');
+        const resultContainer = document.getElementById('resultContainer');
+        const transcriptionText = document.getElementById('transcriptionText');
+        const summaryText = document.getElementById('summaryText');
+        const apiKeyInput = document.getElementById('apiKey');
+        const visualizer = document.getElementById('visualizer');
+
+        // Audio Worklet Code (Inline Blob)
+        const workletCode = `
+            class RecorderProcessor extends AudioWorkletProcessor {
+                constructor() {
+                    super();
+                }
+
+                process(inputs, outputs, parameters) {
+                    const input = inputs[0];
+                    if (input.length > 0) {
+                        const float32Data = input[0];
+                        this.port.postMessage(float32Data);
+                    }
+                    return true;
+                }
+            }
+            registerProcessor('recorder-processor', RecorderProcessor);
+        `;
+
+        const workletBlob = new Blob([workletCode], { type: 'application/javascript' });
+        const workletUrl = URL.createObjectURL(workletBlob);
+
+
+        async function initAudio() {
+            if (audioContext) return; // Already init
+
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+
+                await audioContext.audioWorklet.addModule(workletUrl);
+
+                workletNode = new AudioWorkletNode(audioContext, 'recorder-processor');
+
+                workletNode.port.onmessage = (event) => {
+                    if (!isRecordingSession) return; // Only collecting when session is active
+
+                    const chunk = event.data;
+                    audioChunks.push(chunk);
+                    totalSamples += chunk.length;
+                };
+
+                source.connect(workletNode);
+                workletNode.connect(audioContext.destination);
+                workletNode.disconnect(); // Prevent feedback
+                source.connect(workletNode); // Reconnect to worklet
+
+                visualize(mediaStream);
+
+            } catch (err) {
+                console.error("Error accessing microphone:", err);
+                statusMsg.textContent = "Error: Need Microphone Access";
+                throw err;
+            }
+        }
+
+        // Button Interaction
+        recordBtn.addEventListener('click', async () => {
+            // 1. Init Audio if needed
+            if (!audioContext) {
+                try {
+                    await initAudio();
+                } catch (e) { return; }
+            }
+
+            // 2. Toggle State
+            if (!isRecordingSession) {
+                startRecording();
+            } else {
+                await stopAndProcess();
+            }
+        });
+
+        function startRecording() {
+            isRecordingSession = true;
+            audioChunks = [];
+            totalSamples = 0;
+
+            // UI Updates
+            recordBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; // Red for recording
+            // Update Icon to Stop Square
+            recordBtn.innerHTML = `
+                <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z" fill="white"/></svg>
+                <span>Stop Recording</span>
+            `;
+            pulseRing.classList.add('active');
+            statusMsg.textContent = "Recording... Tap to Stop";
+            resultContainer.style.display = 'none'; // Hide previous results
+        }
+
+        async function stopAndProcess() {
+            isRecordingSession = false;
+
+            // UI Updates
+            pulseRing.classList.remove('active');
+            recordBtn.style.background = 'linear-gradient(135deg, var(--primary-color), var(--primary-hover))';
+            recordBtn.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                     <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                     <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+                <span>Record Location</span>
+            `;
+
+            if (audioChunks.length === 0) {
+                statusMsg.textContent = "No audio recorded.";
+                return;
+            }
+
+            statusMsg.innerHTML = '<div class="loading-spinner"></div>Processing...';
+
+            // Export and Send
+            const wavBlob = exportWAV(audioChunks, audioContext.sampleRate);
+            await sendToAPI(wavBlob);
+        }
+
+
+        function exportWAV(chunks, sampleRate) {
+            const buffer = new Float32Array(totalSamples);
+            let offset = 0;
+            for (const chunk of chunks) {
+                buffer.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            const buffer16 = new Int16Array(buffer.length);
+            for (let i = 0; i < buffer.length; i++) {
+                let s = Math.max(-1, Math.min(1, buffer[i]));
+                buffer16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+
+            const header = new ArrayBuffer(44);
+            const view = new DataView(header);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + buffer16.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, buffer16.length * 2, true);
+
+            return new Blob([header, buffer16], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        async function sendToAPI(audioBlob) {
+            const apiKey = apiKeyInput.value || localStorage.getItem('ai_builder_token');
+            if (!apiKey) {
+                statusMsg.innerHTML = '<span style="color: #ef4444;">Error: Missing API Key</span>';
+                alert("Please enter your API Key in the top-right corner.");
+                return;
+            }
+            // Save if valid usage
+            if (apiKeyInput.value) localStorage.setItem('ai_builder_token', apiKeyInput.value);
+
+            try {
+                // 1. Transcribe
+                statusMsg.innerHTML = '<div class="loading-spinner"></div>Transcribing...';
+
+                const formData = new FormData();
+                formData.append('audio_file', audioBlob, 'recording.wav');
+
+                const transRes = await fetch(TRANSCRIPTION_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: formData
+                });
+
+                if (!transRes.ok) throw new Error('Transcription Failed. Check API Key.');
+                const transData = await transRes.json();
+                const text = transData.text;
+
+                // Update UI with Text
+                transcriptionText.textContent = text || "(No speech detected)";
+                resultContainer.style.display = 'block';
+
+                // 2. Summarize / Save
+                statusMsg.innerHTML = '<div class="loading-spinner"></div>Saving...';
+
+                const chatRes = await fetch(CHAT_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "supermind-agent-v1",
+                        messages: [
+                            { role: "system", content: "You are the brain of the 'QuickStow' app. The user just recorded a location for an item. 1. Confirm explicitly that the location is saved with a checkmark. 2. If the user asked a question, answer it. Keep it very brief." },
+                            { role: "user", content: `User Audio Transcript: "${text}"` }
+                        ]
+                    })
+                });
+
+                if (!chatRes.ok) throw new Error('Save Failed');
+                const chatData = await chatRes.json();
+                const summary = chatData.choices[0].message.content;
+
+                summaryText.innerHTML = `<span style="color: #4ade80; font-weight: bold; font-size: 1.1rem;">Saved!</span><br>${summary}`;
+                statusMsg.textContent = "Done";
+
+            } catch (error) {
+                console.error(error);
+                statusMsg.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Visualization Logic
+        function visualize(stream) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaStreamSource(stream);
+            const analyzer = audioCtx.createAnalyser();
+            analyzer.fftSize = 256;
+            source.connect(analyzer);
+
+            const bufferLength = analyzer.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const canvas = visualizer;
+            const canvasCtx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = 200;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function draw() {
+                requestAnimationFrame(draw);
+                analyzer.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = 'rgba(15, 23, 42, 0.2)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i] / 2;
+
+                    // Change color if recording
+                    if (isRecordingSession) {
+                        canvasCtx.fillStyle = `rgba(239, 68, 68, ${barHeight / 255})`; // Red
+                    } else {
+                        const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
+                        gradient.addColorStop(0, '#4f46e5');
+                        gradient.addColorStop(1, '#818cf8');
+                        canvasCtx.fillStyle = gradient;
+                    }
+
+                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            }
+
+            draw();
+        }
+
+    </script>
+</body>
+
+</html>
