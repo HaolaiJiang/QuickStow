@@ -4,7 +4,7 @@
   "description": "Personal item location tracking system",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && sed 's|./dist/src/main.js|./src/main.js|g' index.html > dist/index.html",
     "test": "vitest --run",
     "test:watch": "vitest"
   },
