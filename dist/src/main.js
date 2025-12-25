@@ -291,4 +291,102 @@ document.addEventListener('click', (e) => {
 });
 // Focus on capture item input on page load
 captureItemInput.focus();
+// --- My Items / See All Items Logic ---
+// DOM Elements - My Items
+const seeAllItemsBtn = document.getElementById('seeAllItemsBtn');
+const myItemsModal = document.getElementById('myItemsModal');
+const myItemsList = document.getElementById('myItemsList');
+const closeModals = document.querySelectorAll('.close-modal');
+const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+const deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
+const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+let itemToDelete = null;
+let itemLocationToDelete = null;
+// Open My Items Modal
+seeAllItemsBtn.addEventListener('click', () => {
+    renderMyItems();
+    myItemsModal.classList.add('show');
+});
+// Close Modals
+closeModals.forEach(btn => {
+    btn.addEventListener('click', () => {
+        myItemsModal.classList.remove('show');
+        deleteConfirmModal.classList.remove('show');
+    });
+});
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+    if (e.target === myItemsModal) {
+        myItemsModal.classList.remove('show');
+    }
+    if (e.target === deleteConfirmModal) {
+        deleteConfirmModal.classList.remove('show');
+    }
+});
+function renderMyItems() {
+    const items = app.getAllItems().sort();
+    myItemsList.innerHTML = '';
+    if (items.length === 0) {
+        myItemsList.innerHTML = '<li style="justify-content:center; color:var(--text-secondary)">No items saved yet.</li>';
+        return;
+    }
+    items.forEach(item => {
+        const li = document.createElement('li');
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'item-name';
+        nameSpan.textContent = item;
+        nameSpan.addEventListener('click', () => {
+            findItemInput.value = item;
+            myItemsModal.classList.remove('show');
+            findForm.dispatchEvent(new Event('submit'));
+        });
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.title = 'Delete Item';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            initiateDelete(item);
+        });
+        li.appendChild(nameSpan);
+        li.appendChild(deleteBtn);
+        myItemsList.appendChild(li);
+    });
+}
+function initiateDelete(item) {
+    itemToDelete = item;
+    // Get current location for the confirmation message
+    const result = app.find(item);
+    itemLocationToDelete = result ? result.currentLocation : 'unknown location';
+    deleteConfirmMessage.textContent = `Are you sure you want to delete "${item}"? 
+    Previous location: ${itemLocationToDelete}`;
+    deleteConfirmModal.classList.add('show');
+}
+// Cancel Delete
+cancelDeleteBtn.addEventListener('click', () => {
+    deleteConfirmModal.classList.remove('show');
+    itemToDelete = null;
+});
+// Confirm Delete
+confirmDeleteBtn.addEventListener('click', async () => {
+    if (itemToDelete) {
+        const item = itemToDelete;
+        // Optimistic UI update
+        deleteConfirmModal.classList.remove('show');
+        try {
+            // Use syncService to delete (handles both local and cloud)
+            await syncService.deleteItem(item);
+            renderMyItems();
+            showFeedback(captureFeedback, `Deleted "${item}"`, 'success'); // Show feedback on main screen
+        }
+        catch (error) {
+            console.error('Delete error:', error);
+            alert('Failed to delete item.');
+        }
+        finally {
+            itemToDelete = null;
+        }
+    }
+});
 //# sourceMappingURL=main.js.map

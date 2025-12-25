@@ -36,5 +36,13 @@ export declare class QuickStowApp {
      * Delegates to StorageService.searchItems()
      */
     search(query: string): string[];
+    /**
+     * Get all tracked items
+     */
+    getAllItems(): string[];
+    /**
+     * Delete an item and its history
+     */
+    deleteItem(itemName: string): Promise<void>;
 }
 //# sourceMappingURL=app.d.ts.map

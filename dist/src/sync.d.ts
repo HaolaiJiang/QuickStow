@@ -95,5 +95,9 @@ export declare class SyncService {
      * Remove an entry ID from pending changes
      */
     private removePendingChange;
+    /**
+     * Delete item and its history from local storage and Firestore
+     */
+    deleteItem(itemName: string): Promise<void>;
 }
 //# sourceMappingURL=sync.d.ts.map

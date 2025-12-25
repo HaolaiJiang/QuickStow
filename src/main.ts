@@ -60,10 +60,10 @@ signInBtn.addEventListener('click', async () => {
   try {
     signInBtn.disabled = true;
     signInBtn.textContent = 'Signing in...';
-    
+
     const user = await authService.signInWithGoogle();
     await syncService.initialize(user.uid);
-    
+
   } catch (error) {
     console.error('Sign-in error:', error);
     showFeedback(captureFeedback, 'Sign-in failed. Please try again.', 'error');
@@ -98,7 +98,7 @@ signOutBtn.addEventListener('click', async () => {
  */
 authService.onAuthStateChanged(async (user) => {
   updateAuthUI(user);
-  
+
   if (user) {
     try {
       await syncService.initialize(user.uid);
@@ -118,7 +118,7 @@ function showFeedback(
 ): void {
   element.textContent = message;
   element.className = `feedback show ${type}`;
-  
+
   // Auto-hide success messages after 3 seconds
   if (type === 'success') {
     setTimeout(() => {
@@ -149,19 +149,19 @@ function formatTimestamp(timestamp: number): string {
 captureForm.addEventListener('submit', async (e: Event) => {
   e.preventDefault();
   hideFeedback(captureFeedback);
-  
+
   const itemName = captureItemInput.value.trim();
   const location = captureLocationInput.value.trim();
-  
+
   try {
     // Capture the item location
     const entry = app.capture(itemName, location);
-    
+
     // If sync is enabled, also save to cloud
     if (syncService.isSyncEnabled) {
       await syncService.saveEntry(entry);
     }
-    
+
     // Show success feedback - Requirements 1.3
     const syncMsg = syncService.isSyncEnabled ? ' (synced)' : '';
     showFeedback(
@@ -169,12 +169,12 @@ captureForm.addEventListener('submit', async (e: Event) => {
       `✓ Saved "${entry.itemName}" at "${entry.location}"${syncMsg}`,
       'success'
     );
-    
+
     // Clear form inputs
     captureItemInput.value = '';
     captureLocationInput.value = '';
     captureItemInput.focus();
-    
+
   } catch (error) {
     // Show error feedback
     const message = error instanceof Error ? error.message : 'Failed to save location';
@@ -190,18 +190,18 @@ findForm.addEventListener('submit', (e: Event) => {
   e.preventDefault();
   hideFeedback(findFeedback);
   hideSuggestions();
-  
+
   const itemName = findItemInput.value.trim();
-  
+
   if (!itemName) {
     showFeedback(findFeedback, 'Please enter an item name', 'error');
     findResults.classList.remove('show');
     return;
   }
-  
+
   // Find the item
   const result = app.find(itemName);
-  
+
   if (result) {
     // Display results - Requirements 2.2
     displayResults(result);
@@ -229,14 +229,14 @@ function displayResults(result: { itemName: string; currentLocation: string; rec
       <div class="result-value highlight">${escapeHtml(result.currentLocation)}</div>
     </div>
   `;
-  
+
   if (result.recentCaptures.length > 0) {
     html += `
       <div class="result-item">
         <div class="result-label">Recent History</div>
         <ul class="history-list">
     `;
-    
+
     for (const capture of result.recentCaptures) {
       html += `
         <li>
@@ -245,10 +245,10 @@ function displayResults(result: { itemName: string; currentLocation: string; rec
         </li>
       `;
     }
-    
+
     html += '</ul></div>';
   }
-  
+
   findResults.innerHTML = html;
 }
 
@@ -263,17 +263,17 @@ findItemInput.addEventListener('input', () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
-  
+
   searchTimeout = setTimeout(() => {
     const query = findItemInput.value.trim();
-    
+
     if (query.length < 1) {
       hideSuggestions();
       return;
     }
-    
+
     const matches = app.search(query);
-    
+
     if (matches.length > 0) {
       displaySuggestions(matches);
     } else {
@@ -288,14 +288,14 @@ findItemInput.addEventListener('input', () => {
  */
 function displaySuggestions(items: string[]): void {
   let html = '';
-  
+
   for (const item of items) {
     html += `<div class="suggestion-item" data-item="${escapeHtml(item)}">${escapeHtml(item)}</div>`;
   }
-  
+
   suggestions.innerHTML = html;
   suggestions.classList.add('show');
-  
+
   // Add click handlers to suggestions
   const suggestionItems = suggestions.querySelectorAll('.suggestion-item');
   suggestionItems.forEach((el) => {
@@ -338,3 +338,120 @@ document.addEventListener('click', (e: Event) => {
 
 // Focus on capture item input on page load
 captureItemInput.focus();
+
+// --- My Items / See All Items Logic ---
+
+// DOM Elements - My Items
+const seeAllItemsBtn = document.getElementById('seeAllItemsBtn') as HTMLButtonElement;
+const myItemsModal = document.getElementById('myItemsModal') as HTMLDivElement;
+const myItemsList = document.getElementById('myItemsList') as HTMLUListElement;
+const closeModals = document.querySelectorAll('.close-modal');
+const deleteConfirmModal = document.getElementById('deleteConfirmModal') as HTMLDivElement;
+const deleteConfirmMessage = document.getElementById('deleteConfirmMessage') as HTMLParagraphElement;
+const cancelDeleteBtn = document.getElementById('cancelDeleteBtn') as HTMLButtonElement;
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn') as HTMLButtonElement;
+
+let itemToDelete: string | null = null;
+let itemLocationToDelete: string | null = null;
+
+// Open My Items Modal
+seeAllItemsBtn.addEventListener('click', () => {
+  renderMyItems();
+  myItemsModal.classList.add('show');
+});
+
+// Close Modals
+closeModals.forEach(btn => {
+  btn.addEventListener('click', () => {
+    myItemsModal.classList.remove('show');
+    deleteConfirmModal.classList.remove('show');
+  });
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', (e: Event) => {
+  if (e.target === myItemsModal) {
+    myItemsModal.classList.remove('show');
+  }
+  if (e.target === deleteConfirmModal) {
+    deleteConfirmModal.classList.remove('show');
+  }
+});
+
+function renderMyItems() {
+  const items = app.getAllItems().sort();
+  myItemsList.innerHTML = '';
+
+  if (items.length === 0) {
+    myItemsList.innerHTML = '<li style="justify-content:center; color:var(--text-secondary)">No items saved yet.</li>';
+    return;
+  }
+
+  items.forEach(item => {
+    const li = document.createElement('li');
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'item-name';
+    nameSpan.textContent = item;
+    nameSpan.addEventListener('click', () => {
+      findItemInput.value = item;
+      myItemsModal.classList.remove('show');
+      findForm.dispatchEvent(new Event('submit'));
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.innerHTML = '&times;';
+    deleteBtn.title = 'Delete Item';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      initiateDelete(item);
+    });
+
+    li.appendChild(nameSpan);
+    li.appendChild(deleteBtn);
+    myItemsList.appendChild(li);
+  });
+}
+
+function initiateDelete(item: string) {
+  itemToDelete = item;
+  // Get current location for the confirmation message
+  const result = app.find(item);
+  itemLocationToDelete = result ? result.currentLocation : 'unknown location';
+
+  deleteConfirmMessage.textContent = `Are you sure you want to delete "${item}"? 
+    Previous location: ${itemLocationToDelete}`;
+
+  deleteConfirmModal.classList.add('show');
+}
+
+// Cancel Delete
+cancelDeleteBtn.addEventListener('click', () => {
+  deleteConfirmModal.classList.remove('show');
+  itemToDelete = null;
+});
+
+// Confirm Delete
+confirmDeleteBtn.addEventListener('click', async () => {
+  if (itemToDelete) {
+    const item = itemToDelete;
+
+    // Optimistic UI update
+    deleteConfirmModal.classList.remove('show');
+
+    try {
+      // Use syncService to delete (handles both local and cloud)
+      await syncService.deleteItem(item);
+
+      renderMyItems();
+      showFeedback(captureFeedback, `Deleted "${item}"`, 'success'); // Show feedback on main screen
+
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Failed to delete item.');
+    } finally {
+      itemToDelete = null;
+    }
+  }
+});

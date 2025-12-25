@@ -291,5 +291,26 @@ export class SyncService {
             this.updateSyncMeta({ pendingChanges: pending });
         }
     }
+    /**
+     * Delete item and its history from local storage and Firestore
+     */
+    async deleteItem(itemName) {
+        // 1. Delete locally
+        this.storageService.deleteEntriesByItem(itemName);
+        // 2. Delete from Firestore if synced
+        if (this.isSyncEnabled && this.userId) {
+            try {
+                const snapshot = await db.collection('users').doc(this.userId).collection('entries').where('itemName', '==', itemName).get();
+                const deletePromises = [];
+                snapshot.forEach((doc) => {
+                    deletePromises.push(doc.ref.delete());
+                });
+                await Promise.all(deletePromises);
+            }
+            catch (error) {
+                console.error('Failed to delete from Firestore:', error);
+            }
+        }
+    }
 }
 //# sourceMappingURL=sync.js.map

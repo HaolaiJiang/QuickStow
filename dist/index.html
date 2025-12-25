@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -163,6 +164,7 @@
                 opacity: 0;
                 transform: translateY(-10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -294,7 +296,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Auth UI */
@@ -376,8 +380,155 @@
             width: 16px;
             height: 16px;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-color);
+        }
+
+        .close-modal {
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: var(--text-color);
+        }
+
+        .items-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .items-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .items-list li:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .item-name {
+            cursor: pointer;
+            flex-grow: 1;
+            color: var(--text-color);
+        }
+
+        .delete-btn {
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            font-size: 1.25rem;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: var(--error-color);
+        }
+
+        /* Button Styles */
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.7);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            margin-top: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary-small {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-color);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-danger-small {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: var(--error-color);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Auth Bar -->
@@ -391,10 +542,14 @@
             </div>
             <button id="signInBtn" class="btn-auth sign-in">
                 <svg class="google-icon" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    <path fill="currentColor"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="currentColor"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="currentColor"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="currentColor"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
                 Sign in to sync
             </button>
@@ -414,11 +569,13 @@
             <form id="captureForm">
                 <div class="form-group">
                     <label for="captureItem">Item Name</label>
-                    <input type="text" id="captureItem" name="itemName" placeholder="e.g., passport, winter jacket" autocomplete="off">
+                    <input type="text" id="captureItem" name="itemName" placeholder="e.g., passport, winter jacket"
+                        autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label for="captureLocation">Location</label>
-                    <input type="text" id="captureLocation" name="location" placeholder="e.g., bedroom closet top shelf" autocomplete="off">
+                    <input type="text" id="captureLocation" name="location" placeholder="e.g., bedroom closet top shelf"
+                        autocomplete="off">
                 </div>
                 <button type="submit" class="btn btn-primary" id="captureBtn">Save Location</button>
             </form>
@@ -431,7 +588,8 @@
             <form id="findForm">
                 <div class="form-group">
                     <label for="findItem">Item Name</label>
-                    <input type="text" id="findItem" name="itemName" placeholder="Search for an item..." autocomplete="off">
+                    <input type="text" id="findItem" name="itemName" placeholder="Search for an item..."
+                        autocomplete="off">
                     <div id="suggestions" class="suggestions"></div>
                 </div>
                 <button type="submit" class="btn btn-primary" id="findBtn">Find Location</button>
@@ -439,13 +597,44 @@
             <div id="findFeedback" class="feedback"></div>
             <div id="findResults" class="results"></div>
         </div>
+
+        <!-- See All Items Button -->
+        <button id="seeAllItemsBtn" class="btn btn-secondary">See All Items</button>
+
+        <!-- My Items Modal -->
+        <div id="myItemsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>My Items</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <ul id="myItemsList" class="items-list">
+                        <!-- Items will be populated here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteConfirmModal" class="modal">
+            <div class="modal-content">
+                <h3>Confirm Deletion</h3>
+                <p id="deleteConfirmMessage">Are you sure you want to delete this item?</p>
+                <div class="modal-actions">
+                    <button id="cancelDeleteBtn" class="btn btn-secondary-small">Cancel</button>
+                    <button id="confirmDeleteBtn" class="btn btn-danger-small">Delete</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK from CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    
+
     <script type="module" src="./src/main.js"></script>
 </body>
+
 </html>

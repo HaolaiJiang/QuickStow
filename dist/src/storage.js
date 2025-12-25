@@ -104,5 +104,15 @@ export class StorageService {
     saveAll(entries) {
         this.storage.setItem(STORAGE_KEY, StorageService.serializeEntries(entries));
     }
+    /**
+     * Delete all entries for a specific item
+     * Requirements: Delete Item feature
+     */
+    deleteEntriesByItem(itemName) {
+        const entries = this.loadAll();
+        const normalizedName = itemName.toLowerCase();
+        const filteredEntries = entries.filter(e => e.itemName.toLowerCase() !== normalizedName);
+        this.saveAll(filteredEntries);
+    }
 }
 //# sourceMappingURL=storage.js.map

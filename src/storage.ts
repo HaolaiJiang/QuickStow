@@ -99,13 +99,13 @@ export class StorageService {
     const entries = this.loadAll();
     const normalizedQuery = query.toLowerCase();
     const matchingItems = new Set<string>();
-    
+
     for (const entry of entries) {
       if (entry.itemName.toLowerCase().includes(normalizedQuery)) {
         matchingItems.add(entry.itemName);
       }
     }
-    
+
     return Array.from(matchingItems);
   }
 
@@ -127,5 +127,15 @@ export class StorageService {
    */
   saveAll(entries: Entry[]): void {
     this.storage.setItem(STORAGE_KEY, StorageService.serializeEntries(entries));
+  }
+  /**
+   * Delete all entries for a specific item
+   * Requirements: Delete Item feature
+   */
+  deleteEntriesByItem(itemName: string): void {
+    const entries = this.loadAll();
+    const normalizedName = itemName.toLowerCase();
+    const filteredEntries = entries.filter(e => e.itemName.toLowerCase() !== normalizedName);
+    this.saveAll(filteredEntries);
   }
 }

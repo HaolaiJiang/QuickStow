@@ -47,7 +47,7 @@ export class SyncService {
   async initialize(userId: string): Promise<void> {
     this.userId = userId;
     this._isSyncEnabled = true;
-    
+
     // Load and merge cloud data with local data
     await this.syncFromCloud();
   }
@@ -70,7 +70,7 @@ export class SyncService {
       ...entry,
       updatedAt: Date.now(),
     };
-    
+
     this.storageService.saveEntry(syncEntry);
 
     // If authenticated, also save to Firestore
@@ -92,7 +92,7 @@ export class SyncService {
    */
   async loadEntries(): Promise<Entry[]> {
     const localEntries = this.storageService.loadAll();
-    
+
     if (!this.isSyncEnabled || !this.userId) {
       return localEntries;
     }
@@ -100,13 +100,13 @@ export class SyncService {
     try {
       const cloudEntries = await this.loadFromFirestore();
       const merged = this.mergeEntries(localEntries, cloudEntries);
-      
+
       // Update local storage with merged data
       this.storageService.saveAll(merged);
-      
+
       // Update Firestore with any local-only entries
       await this.syncPendingChanges(merged);
-      
+
       return merged;
     } catch (error) {
       console.error('Failed to load from Firestore:', error);
@@ -129,7 +129,7 @@ export class SyncService {
     }
 
     const allEntries = this.storageService.loadAll();
-    
+
     for (const id of pendingIds) {
       const entry = allEntries.find(e => e.id === id);
       if (entry) {
@@ -171,7 +171,7 @@ export class SyncService {
     }
 
     const snapshot = await db.collection('users').doc(this.userId).collection('entries').get();
-    
+
     const entries: SyncEntry[] = [];
     snapshot.forEach((doc: any) => {
       const data = doc.data();
@@ -183,7 +183,7 @@ export class SyncService {
         updatedAt: data.updatedAt || data.timestamp,
       });
     });
-    
+
     return entries;
   }
 
@@ -207,7 +207,7 @@ export class SyncService {
     // Merge cloud entries, preferring newer timestamps
     for (const cloudEntry of cloudEntries) {
       const existing = entryMap.get(cloudEntry.id);
-      
+
       if (!existing) {
         // Entry only exists in cloud
         entryMap.set(cloudEntry.id, cloudEntry);
@@ -215,7 +215,7 @@ export class SyncService {
         // Entry exists in both - keep the newer one
         const existingUpdatedAt = existing.updatedAt || existing.timestamp;
         const cloudUpdatedAt = cloudEntry.updatedAt || cloudEntry.timestamp;
-        
+
         if (cloudUpdatedAt > existingUpdatedAt) {
           entryMap.set(cloudEntry.id, cloudEntry);
         }
@@ -237,13 +237,13 @@ export class SyncService {
       const localEntries = this.storageService.loadAll();
       const cloudEntries = await this.loadFromFirestore();
       const merged = this.mergeEntries(localEntries, cloudEntries);
-      
+
       // Save merged data locally
       this.storageService.saveAll(merged);
-      
+
       // Upload any local-only entries to cloud (migration)
       await this.uploadLocalOnlyEntries(localEntries, cloudEntries);
-      
+
       this.updateSyncMeta({ lastSyncTimestamp: Date.now(), pendingChanges: [] });
     } catch (error) {
       console.error('Failed to sync from cloud:', error);
@@ -259,7 +259,7 @@ export class SyncService {
     cloudEntries: SyncEntry[]
   ): Promise<void> {
     const cloudIds = new Set(cloudEntries.map(e => e.id));
-    
+
     for (const entry of localEntries) {
       if (!cloudIds.has(entry.id)) {
         try {
@@ -281,7 +281,7 @@ export class SyncService {
    */
   private async syncPendingChanges(entries: SyncEntry[]): Promise<void> {
     const pendingIds = this.getPendingChanges();
-    
+
     for (const id of pendingIds) {
       const entry = entries.find(e => e.id === id);
       if (entry) {
@@ -346,6 +346,30 @@ export class SyncService {
     if (index !== -1) {
       pending.splice(index, 1);
       this.updateSyncMeta({ pendingChanges: pending });
+    }
+  }
+
+  /**
+   * Delete item and its history from local storage and Firestore
+   */
+  async deleteItem(itemName: string): Promise<void> {
+    // 1. Delete locally
+    this.storageService.deleteEntriesByItem(itemName);
+
+    // 2. Delete from Firestore if synced
+    if (this.isSyncEnabled && this.userId) {
+      try {
+        const snapshot = await db.collection('users').doc(this.userId).collection('entries').where('itemName', '==', itemName).get();
+
+        const deletePromises: Promise<void>[] = [];
+        snapshot.forEach((doc: any) => {
+          deletePromises.push(doc.ref.delete());
+        });
+
+        await Promise.all(deletePromises);
+      } catch (error) {
+        console.error('Failed to delete from Firestore:', error);
+      }
     }
   }
 }

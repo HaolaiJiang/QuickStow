@@ -104,5 +104,58 @@ export class QuickStowApp {
     search(query) {
         return this.storageService.searchItems(query);
     }
+    /**
+     * Get all tracked items
+     */
+    getAllItems() {
+        return this.storageService.getAllItems();
+    }
+    /**
+     * Delete an item and its history
+     */
+    async deleteItem(itemName) {
+        // We need to access sync service if available, but App doesn't hold reference to SyncService directly.
+        // However, Main.ts orchestrates them. 
+        // Wait, App just wraps StorageService. SyncService wraps StorageService too.
+        // The architecture is: Main -> App -> Storage
+        //                      Main -> Sync -> Storage
+        // App doesn't know about Sync.
+        // So `deleteItem` should be on App? Or should Main call Sync directly?
+        // In Main.ts:
+        // const storageService = new StorageService();
+        // const syncService = new SyncService(storageService);
+        // const app = new QuickStowApp(); 
+        // Wait, QuickStowApp creates its OWN storage service if not passed!
+        // In main.ts: const app = new QuickStowApp(); -> creates NEW StorageService(localStorage)
+        // const storageService = new StorageService(); -> creates ANOTHER StorageService(localStorage)
+        // This seems like a bug in existing code or my understanding.
+        // Let's check main.ts line 13-15 again.
+        // 13: const storageService = new StorageService();
+        // 14: const syncService = new SyncService(storageService);
+        // 15: const app = new QuickStowApp();
+        // app.ts constructor:
+        // constructor(storage?: IStorage) {
+        //   this.storageService = new StorageService(storage);
+        // }
+        // So `app` has its OWN StorageService instance, but both use `localStorage` (default), so they share the underlying data.
+        // So modifications via `app` will be seen by `syncService` when it reads from localStorage.
+        // But for DELETION, if we want to sync the delete to cloud, we MUST go through SyncService.
+        // So `app.deleteItem` should probably not exist, or just do local delete. 
+        // BUT the requirement says "delete feature... remove the record from the database".
+        // I should expose `deleteItem` in `app` just for local, but `main` is the one tieing things together.
+        // `main` has access to `syncService`.
+        // So in `main.ts`, when handling the delete action, I should call `syncService.deleteItem(itemName)`.
+        // HOWEVER, `app.ts` is the domain logic.
+        // I already added `deleteEntriesByItem` to `StorageService` and `deleteItem` to `SyncService`.
+        // `SyncService` handles both local (via its storageService) and cloud.
+        // So in `main.ts`, I can just use `syncService.deleteItem()`.
+        // AND I need `app.getAllItems()` to populate the list.
+        // So for App.ts, I just need `getAllItems`.
+        // And actually `SyncService` is better suited for `deleteItem` because it handles the cloud part.
+        // But `App` is used for `find` and `capture`.
+        // Let's stick to adding `getAllItems` to `App` for the list view.
+        // And I will assume `main` uses `syncService` for deletion.
+        return this.storageService.deleteEntriesByItem(itemName);
+    }
 }
 //# sourceMappingURL=app.js.map

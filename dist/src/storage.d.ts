@@ -58,5 +58,10 @@ export declare class StorageService {
      * Used internally for operations that modify the full entry list
      */
     saveAll(entries: Entry[]): void;
+    /**
+     * Delete all entries for a specific item
+     * Requirements: Delete Item feature
+     */
+    deleteEntriesByItem(itemName: string): void;
 }
 //# sourceMappingURL=storage.d.ts.map
